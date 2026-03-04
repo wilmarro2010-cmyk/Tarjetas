@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Generador Tarjetas PDF</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&family=Lato:wght@400;700&family=Poppins:wght@400;500;600;700&family=Raleway:wght@400;500;600&family=Playfair+Display:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        :root {
+            --bg: #0d0f1a;
+            --s1: #161928;
+            --s2: #1e2338;
+            --bd: #2a2f4a;
+            --ac: #7c3aed;
+            --ac2: #a78bfa;
+            --tx: #e2e8f0;
+            --tx2: #8892ae;
+            --ok: #10b981;
+            --er: #ef4444;
+            --r: 10px
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--tx);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden
+        }
+
+        /* HEADER */
+        header {
+            background: linear-gradient(135deg, #161928, #0d0f1a);
+            border-bottom: 1px solid var(--bd);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0
+        }
+
+        .hico {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--ac), var(--ac2));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 0 16px rgba(124, 58, 237, .4)
+        }
+
+        header h1 {
+            font-size: 1rem;
+            font-weight: 700
+        }
+
+        header h1 em {
+            color: var(--ac2);
+            font-style: normal
+        }
+
+        header small {
+            font-size: .65rem;
+            color: var(--tx2);
+            display: block
+        }
+
+        .sp {
+            flex: 1
+        }
+
+        .hbtn {
+            padding: 8px 18px;
+            background: linear-gradient(135deg, var(--ac), #6d28d9);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: .82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap
+        }
+
+        .hbtn:disabled {
+            opacity: .3;
+            cursor: not-allowed
+        }
+
+        .hbtn:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 20px rgba(124, 58, 237, .5)
+        }
+
+        /* LAYOUT */
+        .app {
+            display: grid;
+            grid-template-columns: 300px 1fr 260px;
+            flex: 1;
+            overflow: hidden
+        }
+
+        .panel {
+            background: var(--s1);
+            border-right: 1px solid var(--bd);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0
+        }
+
+        .panel:last-child {
+            border-right: none;
+            border-left: 1px solid var(--bd)
+        }
+
+        .sec {
+            border-bottom: 1px solid var(--bd);
+            padding: 12px
+        }
+
+        .sec h3 {
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: var(--tx2);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        /* FORM */
+        label.lb {
+            font-size: .68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--tx2);
+            display: block;
+            margin-bottom: 4px
+        }
+
+        input[type=text],
+        input[type=number],
+        select,
+        textarea {
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--bd);
+            border-radius: 6px;
+            color: var(--tx);
+            padding: 6px 9px;
+            font-size: .8rem;
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+            outline: none;
+            transition: border-color .2s
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--ac)
+        }
+
+        select option {
+            background: #161928
+        }
+
+        .row {
+            display: flex;
+            gap: 7px;
+            margin-bottom: 8px
+        }
+
+        .fg {
+            display: flex;
+            flex-direction: column;
+            flex: 1
+        }
+
+        .fg+.fg {
+            margin-top: 0
+        }
+
+        .cr {
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .cr input[type=color] {
+            width: 30px;
+            height: 30px;
+            padding: 1px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, .08);
+            flex-shrink: 0
+        }
+
+        .cr input[type=text] {
+            font-family: monospace;
+            font-size: .78rem
+        }
+
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 8px
+        }
+
+        .toggle label {
+            font-size: .78rem;
+            color: var(--tx2);
+            cursor: pointer
+        }
+
+        .sw {
+            position: relative;
+            width: 30px;
+            height: 17px;
+            flex-shrink: 0
+        }
+
+        .sw input {
+            opacity: 0;
+            width: 0;
+            height: 0
+        }
+
+        .sl {
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, .1);
+            cursor: pointer;
+            transition: .2s
+        }
+
+        .sl::before {
+            content: '';
+            position: absolute;
+            width: 11px;
+            height: 11px;
+            left: 3px;
+            top: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: .2s
+        }
+
+        input:checked+.sl {
+            background: var(--ac)
+        }
+
+        input:checked+.sl::before {
+            transform: translateX(13px)
+        }
+
+        /* DROPZONE */
+        .dz {
+            border: 2px dashed var(--bd);
+            border-radius: 8px;
+            padding: 20px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all .2s;
+            position: relative;
+            margin-bottom: 8px
+        }
+
+        .dz:hover,
+        .dz.ov {
+            border-color: var(--ac);
+            background: rgba(124, 58, 237, .07)
+        }
+
+        .dz input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%
+        }
+
+        .dz p {
+            font-size: .78rem;
+            color: var(--tx2);
+            line-height: 1.6
+        }
+
+        .dz .di {
+            font-size: 1.5rem;
+            margin-bottom: 6px
+        }
+
+        .bd {
+            display: inline-block;
+            padding: 1px 6px;
+            background: rgba(124, 58, 237, .2);
+            border: 1px solid rgba(124, 58, 237, .35);
+            border-radius: 20px;
+            font-size: .63rem;
+            color: var(--ac2);
+            margin: 1px
+        }
+
+        /* UPLOAD MINI */
+        .uth {
+            display: flex;
+            gap: 7px;
+            align-items: center;
+            margin-bottom: 8px
+        }
+
+        .utb {
+            width: 50px;
+            height: 32px;
+            border: 1px dashed var(--bd);
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, .03);
+            flex-shrink: 0;
+            font-size: .55rem;
+            color: var(--tx2);
+            text-align: center
+        }
+
+        .utb img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain
+        }
+
+        .uub {
+            flex: 1;
+            padding: 5px 8px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--bd);
+            border-radius: 6px;
+            color: var(--tx2);
+            font-size: .74rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all .2s;
+            position: relative;
+            overflow: hidden
+        }
+
+        .uub:hover {
+            border-color: var(--ac);
+            color: var(--tx)
+        }
+
+        .uub input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer
+        }
+
+        .xb {
+            background: none;
+            border: none;
+            color: var(--tx2);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px;
+            flex-shrink: 0
+        }
+
+        /* TABLE */
+        .tw {
+            overflow: auto;
+            flex: 1
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .75rem
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: var(--s2)
+        }
+
+        th {
+            padding: 7px 9px;
+            text-align: left;
+            font-size: .63rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--tx2);
+            border-bottom: 1px solid var(--bd)
+        }
+
+        td {
+            padding: 6px 9px;
+            border-bottom: 1px solid rgba(255, 255, 255, .04);
+            color: var(--tx)
+        }
+
+        tr:hover td {
+            background: rgba(124, 58, 237, .07)
+        }
+
+        .es {
+            text-align: center;
+            padding: 30px 10px;
+            color: var(--tx2)
+        }
+
+        .es .ei {
+            font-size: 1.8rem;
+            opacity: .4;
+            margin-bottom: 6px
+        }
+
+        /* CARD EDITOR AREA */
+        .editor-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            background: var(--bg);
+            padding: 20px;
+            gap: 12px;
+            overflow: hidden
+        }
+
+        .editor-label {
+            font-size: .7rem;
+            color: var(--tx2);
+            text-align: center
+        }
+
+        /* CARD CONTAINER – draggable fields live here */
+        #card {
+            position: relative;
+            background: #1a237e;
+            border-radius: 6px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, .6);
+            overflow: hidden;
+            cursor: default;
+            flex-shrink: 0
+        }
+
+        #card canvas#bgCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%
+        }
+
+        /* FIELD ELEMENTS */
+        .fel {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+            white-space: nowrap;
+            line-height: 1;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: box-shadow .15s
+        }
+
+        .fel:hover,
+        .fel.sel {
+            outline: 2px dashed rgba(167, 139, 250, .8);
+            outline-offset: 2px
+        }
+
+        .fel.sel {
+            outline: 2px solid var(--ac2)
+        }
+
+        /* LOGO ELEMENT */
+        #fel-logo {
+            position: absolute;
+            cursor: move;
+            user-select: none
+        }
+
+        #fel-logo img {
+            display: block;
+            pointer-events: none
+        }
+
+        #fel-logo:hover,
+        #fel-logo.sel {
+            outline: 2px dashed rgba(167, 139, 250, .8);
+            outline-offset: 2px
+        }
+
+        #fel-logo.sel {
+            outline: 2px solid var(--ac2)
+        }
+
+        /* FIELD LIST (right panel) */
+        .flist {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 8px
+        }
+
+        .fitem {
+            padding: 7px 10px;
+            border: 1px solid var(--bd);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: .8rem;
+            transition: all .15s
+        }
+
+        .fitem:hover,
+        .fitem.act {
+            border-color: var(--ac);
+            background: rgba(124, 58, 237, .1);
+            color: var(--ac2)
+        }
+
+        .fitem .fdot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0
+        }
+
+        .fitem .fname {
+            flex: 1;
+            font-weight: 500
+        }
+
+        .fitem .fvis {
+            font-size: 11px;
+            color: var(--tx2);
+            cursor: pointer
+        }
+
+        /* TYPO PANEL */
+        #typoPan {
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        /* RESIZE HANDLE */
+        .rh {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--ac2);
+            border-radius: 50%;
+            cursor: nwse-resize;
+            right: -5px;
+            bottom: -5px
+        }
+
+        /* TOAST */
+        #toast {
+            position: fixed;
+            bottom: 18px;
+            right: 18px;
+            background: var(--s2);
+            border: 1px solid var(--bd);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: .78rem;
+            color: var(--tx);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, .5);
+            display: none;
+            align-items: center;
+            gap: 7px;
+            z-index: 999;
+            animation: ti .3s ease
+        }
+
+        #toast.sh {
+            display: flex
+        }
+
+        .toast-ok {
+            border-color: var(--ok) !important
+        }
+
+        .toast-er {
+            border-color: var(--er) !important
+        }
+
+        @keyframes ti {
+            from {
+                transform: translateY(10px);
+                opacity: 0
+            }
+
+            to {
+                transform: none;
+                opacity: 1
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bd);
+            border-radius: 2px
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="hico">🪪</div>
+        <div>
+            <h1>Tarjetas <em>PDF</em></h1><small>Editor visual · 9 × 5 cm</small>
+        </div>
+        <div class="sp"></div>
+        <button class="hbtn" id="btnPdf" disabled>⬇ Generar PDF</button>
+    </header>
+
+    <div class="app">
+
+        <!-- ═══ LEFT PANEL: Data & Background ═══ -->
+        <div class="panel">
+
+            <!-- Data upload -->
+            <div class="sec">
+                <h3>📂 Datos</h3>
+                <div class="dz" id="dz">
+                    <input type="file" id="dataFile" accept=".xlsx,.xls,.csv,.txt">
+                    <div class="di">📊</div>
+                    <p><strong>Arrastra o haz clic</strong><br>para cargar datos</p>
+                    <p style="margin-top:4px"><span class="bd">.xlsx</span><span class="bd">.csv</span><span
+                            class="bd">.txt</span></p>
+                </div>
+                <p style="font-size:.67rem;color:var(--tx2);line-height:1.5">Columnas: <strong>nombre, cargo, email,
+                        telefono</strong></p>
+            </div>
+
+            <!-- Background -->
+            <div class="sec">
+                <h3>🎨 Fondo de tarjeta</h3>
+                <div class="row">
+                    <div class="fg">
+                        <label class="lb">Color 1</label>
+                        <div class="cr"><input type="color" id="bgC1" value="#1a237e"><input type="text" id="bgH1"
+                                value="#1a237e" maxlength="7" style="font-family:monospace"></div>
+                    </div>
+                </div>
+                <div class="toggle"><label class="sw"><input type="checkbox" id="useGrad"><span
+                            class="sl"></span></label><label for="useGrad">Gradiente</label></div>
+                <div id="gradPanel" style="display:none;margin-bottom:8px">
+                    <label class="lb">Color 2</label>
+                    <div class="cr"><input type="color" id="bgC2" value="#0d47a1"><input type="text" id="bgH2"
+                            value="#0d47a1" maxlength="7" style="font-family:monospace"></div>
+                </div>
+                <label class="lb">Fondo imagen / PDF</label>
+                <div class="uth">
+                    <div class="utb" id="bgImgThumb">Sin img</div>
+                    <div class="uub">📎 Imagen o PDF<input type="file" id="bgImgFile" accept="image/*,.pdf"></div>
+                    <button class="xb" onclick="clearBgImg()">✕</button>
+                </div>
+                <div class="toggle" id="bgImgToggle" style="display:none">
+                    <label class="sw"><input type="checkbox" id="useBgImg" checked><span class="sl"></span></label>
+                    <label for="useBgImg">Usar imagen como fondo</label>
+                </div>
+            </div>
+
+            <!-- PDF options -->
+            <div class="sec">
+                <h3>📄 Distribución PDF</h3>
+                <div class="fg" style="margin-bottom:6px">
+                    <label class="lb">Formato</label>
+                    <select id="layout">
+                        <option value="page">Una tarjeta por página (9×5 cm)</option>
+                        <option value="2col" selected>2 por fila en A4</option>
+                        <option value="4up">4 por página A4</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="sec" style="flex:1;display:flex;flex-direction:column;padding-bottom:0">
+                <h3>📋 Datos <span id="rowCnt"
+                        style="margin-left:4px;font-size:.65rem;padding:1px 6px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.35);border-radius:20px;color:var(--ac2)"></span>
+                </h3>
+                <div class="tw" id="tw">
+                    <div class="es">
+                        <div class="ei">📁</div>
+                        <p>Carga un archivo</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ═══ CENTER: Card Editor ═══ -->
+        <div class="editor-area">
+            <div id="card">
+                <canvas id="bgCanvas"></canvas>
+                <!-- field overlays injected by JS -->
+            </div>
+            <div class="editor-label">Arrastra los campos para posicionarlos · 9 cm × 5 cm</div>
+        </div>
+
+        <!-- ═══ RIGHT PANEL: Fields & Typography ═══ -->
+        <div class="panel">
+
+            <!-- Field list -->
+            <div class="sec">
+                <h3>📐 Campos</h3>
+                <div class="flist" id="fieldList"></div>
+                <!-- X/Y position inputs -->
+                <div id="xyPanel" style="display:none;margin-bottom:10px">
+                    <div class="row" style="gap:6px">
+                        <div class="fg">
+                            <label class="lb">X — izquierda (mm)</label>
+                            <input type="number" id="posX" min="0" max="89" step="0.5"
+                                oninput="moveFieldByInput('x',+this.value)">
+                        </div>
+                        <div class="fg">
+                            <label class="lb">Y — arriba (mm)</label>
+                            <input type="number" id="posY" min="0" max="49" step="0.5"
+                                oninput="moveFieldByInput('y',+this.value)">
+                        </div>
+                    </div>
+                </div>
+                <!-- Logo -->
+                <label class="lb">Logo empresa</label>
+                <div class="uth">
+                    <div class="utb" id="logoThumb">Sin logo</div>
+                    <div class="uub">📎 Logo<input type="file" id="logoFile" accept="image/*"></div>
+                    <button class="xb" onclick="clearLogo()">✕</button>
+                </div>
+                <div class="row" id="logoSizeRow" style="display:none;margin-top:4px">
+                    <div class="fg"><label class="lb">Alto logo (mm)</label><input type="number" id="logoHmm" value="12"
+                            min="2" max="40" oninput="renderCard()"></div>
+                </div>
+            </div>
+
+            <!-- Typography (shown for selected field) -->
+            <div class="sec">
+                <h3>🔤 Tipografía — <span id="selFieldLabel" style="color:var(--ac2)">selecciona un campo</span></h3>
+                <div id="typoPan" style="opacity:.4;pointer-events:none">
+                    <div class="fg" style="margin-bottom:8px">
+                        <label class="lb">Fuente</label>
+                        <select id="tFont" onchange="applyTypo()">
+                            <optgroup label="─ Helvetica Neue">
+                                <option value="'Helvetica Neue',Helvetica,Arial,sans-serif">Helvetica Neue</option>
+                                <option value="'HelveticaNeue-Bold','Helvetica Neue Bold','Helvetica Neue',sans-serif">
+                                    Helvetica Neue Bold</option>
+                                <option
+                                    value="'HelveticaNeue-Light','Helvetica Neue Light','Helvetica Neue',sans-serif">
+                                    Helvetica Neue Light</option>
+                                <option
+                                    value="'HelveticaNeue-LightItalic','Helvetica Neue LightItalic','Helvetica Neue',sans-serif">
+                                    Helvetica Neue Light Italic</option>
+                                <option
+                                    value="'HelveticaNeue-Medium','Helvetica Neue Medium','Helvetica Neue',sans-serif">
+                                    Helvetica Neue Medium</option>
+                                <option value="'HelveticaNeue-Roman','Helvetica Neue',sans-serif">Helvetica Neue Roman
+                                </option>
+                                <option
+                                    value="'HelveticaNeue-CondensedBold','Helvetica Neue Condensed Bold',sans-serif">
+                                    Helvetica Neue Condensed Bold</option>
+                                <option value="'HelveticaNeue-Condensed','Helvetica Neue Condensed',sans-serif">
+                                    Helvetica Neue Condensed</option>
+                                <option value="Helvetica,Arial,sans-serif">Helvetica</option>
+                            </optgroup>
+                            <optgroup label="─ Sans-Serif (Adobe / macOS)">
+                                <option value="Arial,Helvetica,sans-serif">Arial</option>
+                                <option value="'Arial Narrow',Arial,sans-serif">Arial Narrow</option>
+                                <option value="'Arial Black',Arial,sans-serif">Arial Black</option>
+                                <option value="'Gill Sans','Gill Sans MT',sans-serif">Gill Sans</option>
+                                <option value="'Gill Sans MT Condensed','Gill Sans Condensed',sans-serif">Gill Sans
+                                    Condensed</option>
+                                <option value="Futura,'Century Gothic',sans-serif">Futura</option>
+                                <option value="'Century Gothic',Futura,sans-serif">Century Gothic</option>
+                                <option value="Optima,'Segoe UI',sans-serif">Optima</option>
+                                <option value="'Myriad Pro','Myriad','Trebuchet MS',sans-serif">Myriad Pro</option>
+                                <option value="Calibri,Candara,sans-serif">Calibri</option>
+                                <option value="Candara,Calibri,sans-serif">Candara</option>
+                                <option value="'Trebuchet MS','Lucida Grande',sans-serif">Trebuchet MS</option>
+                                <option value="Verdana,Geneva,Tahoma,sans-serif">Verdana</option>
+                                <option value="Tahoma,Verdana,sans-serif">Tahoma</option>
+                                <option value="Geneva,Verdana,sans-serif">Geneva</option>
+                                <option value="'Franklin Gothic Medium','Franklin Gothic',sans-serif">Franklin Gothic
+                                </option>
+                                <option value="Impact,Charcoal,sans-serif">Impact</option>
+                                <option value="'Lucida Grande','Lucida Sans Unicode',sans-serif">Lucida Grande</option>
+                                <option value="'Avenir Next','Avenir',Helvetica,sans-serif">Avenir Next</option>
+                                <option value="Avenir,'Avenir Next',Helvetica,sans-serif">Avenir</option>
+                                <option value="Frutiger,Univers,Helvetica,sans-serif">Frutiger</option>
+                                <option value="'Trade Gothic','Gothic A1',sans-serif">Trade Gothic</option>
+                                <option value="Univers,Helvetica,sans-serif">Univers</option>
+                            </optgroup>
+                            <optgroup label="─ Serif">
+                                <option value="'Times New Roman',Times,serif">Times New Roman</option>
+                                <option value="Georgia,'Times New Roman',serif">Georgia</option>
+                                <option value="Garamond,'EB Garamond',Georgia,serif">Garamond</option>
+                                <option value="'Adobe Garamond Pro',Garamond,serif">Adobe Garamond Pro</option>
+                                <option value="Palatino,'Palatino Linotype','Book Antiqua',serif">Palatino</option>
+                                <option value="'Book Antiqua',Palatino,serif">Book Antiqua</option>
+                                <option value="'Bodoni MT','Bodoni 72',serif">Bodoni MT</option>
+                                <option value="Didot,'Bodoni MT',serif">Didot</option>
+                                <option value="Baskerville,'Libre Baskerville',serif">Baskerville</option>
+                                <option value="'Minion Pro',Minion,Georgia,serif">Minion Pro</option>
+                                <option value="Cambria,Cochin,Georgia,serif">Cambria</option>
+                                <option value="Cochin,Palatino,serif">Cochin</option>
+                                <option value="'Hoefler Text',Georgia,serif">Hoefler Text</option>
+                                <option value="'Century Schoolbook',Century,Georgia,serif">Century Schoolbook</option>
+                                <option value="'Big Caslon',Caslon,serif">Big Caslon</option>
+                            </optgroup>
+                            <optgroup label="─ Slab / Display">
+                                <option value="Rockwell,serif">Rockwell</option>
+                                <option value="Clarendon,'Clarendon BT',serif">Clarendon</option>
+                                <option value="'Trajan Pro',Trajan,serif">Trajan Pro</option>
+                                <option value="'Copperplate Gothic Bold',Copperplate,sans-serif">Copperplate Gothic
+                                </option>
+                                <option value="Herculanum,serif">Herculanum</option>
+                                <option value="'Charlemagne Std',serif">Charlemagne</option>
+                            </optgroup>
+                            <optgroup label="─ Script">
+                                <option value="'Brush Script MT','Brush Script Std',cursive">Brush Script MT</option>
+                                <option value="'Zapf Chancery',Palatino,cursive">Zapf Chancery</option>
+                                <option value="'Apple Chancery',Palatino,cursive">Apple Chancery</option>
+                                <option value="'Snell Roundhand',cursive">Snell Roundhand</option>
+                                <option value="'Lucida Calligraphy',cursive">Lucida Calligraphy</option>
+                            </optgroup>
+                            <optgroup label="─ Monoespaciado">
+                                <option value="'Courier New',Courier,monospace">Courier New</option>
+                                <option value="Monaco,'Courier New',monospace">Monaco</option>
+                                <option value="Menlo,Monaco,monospace">Menlo</option>
+                                <option value="'Lucida Console',Monaco,monospace">Lucida Console</option>
+                                <option value="'Andale Mono','Courier New',monospace">Andale Mono</option>
+                            </optgroup>
+                            <optgroup label="─ Google Fonts">
+                                <option>Inter</option>
+                                <option>Montserrat</option>
+                                <option>Roboto</option>
+                                <option>Lato</option>
+                                <option>Poppins</option>
+                                <option>Raleway</option>
+                                <option>Playfair Display</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="fg"><label class="lb">Tamaño (pt)</label><input type="number" id="tSize" value="12"
+                                min="4" max="60" oninput="applyTypo()"></div>
+                        <div class="fg"><label class="lb">Negrita</label>
+                            <div class="toggle" style="margin-top:6px;margin-bottom:0"><label class="sw"><input
+                                        type="checkbox" id="tBold" onchange="applyTypo()"><span
+                                        class="sl"></span></label></div>
+                        </div>
+                    </div>
+                    <div class="fg" style="margin-bottom:8px">
+                        <label class="lb">Color</label>
+                        <div class="cr"><input type="color" id="tColor" value="#ffffff"
+                                oninput="syncTColor('p',this.value)"><input type="text" id="tColorH" value="#ffffff"
+                                maxlength="7" style="font-family:monospace" oninput="syncTColor('t',this.value)"></div>
+                    </div>
+                    <div class="fg">
+                        <label class="lb">Icono / prefijo (opcional)</label>
+                        <input type="text" id="tPrefix" placeholder='ej: ✉  o vaciar' oninput="applyTypo()">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        // ════════════════════════════════════════
+        // CARD DIMENSIONS
+        // Editor renders at SCALE × real mm size
+        // ════════════════════════════════════════
+        const CARD_W_MM = 90, CARD_H_MM = 50;
+        const SCALE = 6; // px per mm in editor
+        const EW = CARD_W_MM * SCALE; // 540
+        const EH = CARD_H_MM * SCALE; // 300
+
+        const card = document.getElementById('card');
+        card.style.width = EW + 'px';
+        card.style.height = EH + 'px';
+
+        const bgCanvas = document.getElementById('bgCanvas');
+        bgCanvas.width = EW; bgCanvas.height = EH;
+        bgCanvas.style.width = EW + 'px'; bgCanvas.style.height = EH + 'px';
+
+        // ════════════════════════════════════════
+        // FIELDS CONFIG
+        // ════════════════════════════════════════
+        // Positions in mm from card top-left
+        const FIELDS = [
+            { key: 'nombre', label: 'Nombre', color: '#ffffff', size: 13, font: 'Montserrat', bold: true, prefix: '', dot: '#a78bfa', x: 45, y: 8 },
+            { key: 'cargo', label: 'Cargo', color: '#c5cae9', size: 9, font: 'Inter', bold: false, prefix: '', dot: '#6ee7b7', x: 45, y: 22 },
+            { key: 'email', label: 'Email', color: '#b0bec5', size: 8, font: 'Inter', bold: false, prefix: '', dot: '#93c5fd', x: 45, y: 32 },
+            { key: 'telefono', label: 'Teléfono', color: '#b0bec5', size: 8, font: 'Inter', bold: false, prefix: '', dot: '#fcd34d', x: 45, y: 41 },
+        ];
+
+        // Logo state
+        let logoImg = null, logoEl = null;
+        let logoPos = { x: 5, y: 10 }; // mm from top-left
+        // Logo size in mm (height)
+        let bgImgData = null, bgImgEl = null;
+
+        let rows = [];
+        let selField = null; // currently selected FIELDS index
+
+        // ════════════════════════════════════════
+        // BUILD FIELD OVERLAYS
+        // ════════════════════════════════════════
+        function mm2px(mm) { return mm * SCALE }
+        function px2mm(px) { return px / SCALE }
+
+        function buildFieldEls() {
+            // Remove old
+            card.querySelectorAll('.fel').forEach(e => e.remove());
+            const list = document.getElementById('fieldList'); list.innerHTML = '';
+
+            FIELDS.forEach((f, i) => {
+                // Editor overlay
+                const el = document.createElement('div');
+                el.className = 'fel'; el.dataset.idx = i;
+                el.style.left = mm2px(f.x) + 'px';
+                el.style.top = mm2px(f.y) + 'px';
+                el.style.fontFamily = `"${f.font}",Inter,sans-serif`;
+                el.style.fontSize = (f.size * 25.4 / 72 * SCALE) + 'px'; // pt → mm → px at editor scale
+                el.style.fontWeight = f.bold ? '700' : '400';
+                el.style.color = f.color;
+                el.textContent = (f.prefix) + (rows[0] ? rows[0][f.key] || f.label : f.label);
+                el.id = 'fel-' + f.key;
+                card.appendChild(el);
+                makeDraggable(el, i);
+                el.addEventListener('click', () => selectField(i));
+
+                // Right panel list item
+                const item = document.createElement('div');
+                item.className = 'fitem'; item.dataset.idx = i; item.id = 'fitem-' + f.key;
+                item.innerHTML = `<div class="fdot" style="background:${f.dot}"></div><span class="fname">${f.label}</span>`;
+                item.addEventListener('click', () => selectField(i));
+                list.appendChild(item);
+            });
+        }
+
+        function updateFieldEl(i) {
+            const f = FIELDS[i];
+            const el = document.getElementById('fel-' + f.key);
+            if (!el) return;
+            el.style.fontFamily = `"${f.font}",Inter,sans-serif`;
+            el.style.fontSize = (f.size * 25.4 / 72 * SCALE) + 'px';
+            el.style.fontWeight = f.bold ? '700' : '400';
+            el.style.color = f.color;
+            el.textContent = (f.prefix) + (rows[0] ? rows[0][f.key] || f.label : f.label);
+        }
+
+        // ════════════════════════════════════════
+        // DRAG
+        // ════════════════════════════════════════
+        function makeDraggable(el, fieldIdx) {
+            let sx, sy, ox, oy;
+            el.addEventListener('mousedown', e => {
+                if (e.button !== 0) return;
+                e.preventDefault();
+                selectField(fieldIdx);
+                const rect = card.getBoundingClientRect();
+                const elRect = el.getBoundingClientRect();
+                ox = elRect.left - rect.left; oy = elRect.top - rect.top;
+                sx = e.clientX; sy = e.clientY;
+                function mv(e) {
+                    const dx = e.clientX - sx, dy = e.clientY - sy;
+                    const nx = Math.max(0, Math.min(EW - 2, ox + dx));
+                    const ny = Math.max(0, Math.min(EH - 2, oy + dy));
+                    el.style.left = nx + 'px'; el.style.top = ny + 'px';
+                    FIELDS[fieldIdx].x = px2mm(nx); FIELDS[fieldIdx].y = px2mm(ny);
+                    // sync X/Y inputs
+                    document.getElementById('posX').value = px2mm(nx).toFixed(1);
+                    document.getElementById('posY').value = px2mm(ny).toFixed(1);
+                }
+                function up() { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up) }
+                document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+            });
+        }
+
+        function makeLogoDraggable() {
+            if (!logoEl) return;
+            let sx, sy, ox, oy;
+            logoEl.addEventListener('mousedown', e => {
+                if (e.button !== 0) return; e.preventDefault();
+                logoEl.classList.add('sel');
+                const rect = card.getBoundingClientRect();
+                const er = logoEl.getBoundingClientRect();
+                ox = er.left - rect.left; oy = er.top - rect.top; sx = e.clientX; sy = e.clientY;
+                function mv(e) {
+                    const nx = Math.max(0, ox + (e.clientX - sx));
+                    const ny = Math.max(0, oy + (e.clientY - sy));
+                    logoEl.style.left = nx + 'px'; logoEl.style.top = ny + 'px';
+                    logoPos.x = px2mm(nx); logoPos.y = px2mm(ny);
+                }
+                function up() { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up) }
+                document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+            });
+        }
+
+        // ════════════════════════════════════════
+        // SELECT FIELD
+        // ════════════════════════════════════════
+        function selectField(i) {
+            selField = i;
+            // highlight
+            document.querySelectorAll('.fel').forEach((e, j) => e.classList.toggle('sel', +e.dataset.idx === i));
+            document.querySelectorAll('.fitem').forEach(e => e.classList.toggle('act', +e.dataset.idx === i));
+            // populate typo panel
+            const f = FIELDS[i];
+            document.getElementById('selFieldLabel').textContent = f.label;
+            document.getElementById('tFont').value = f.font;
+            document.getElementById('tSize').value = f.size;
+            document.getElementById('tBold').checked = f.bold;
+            document.getElementById('tColor').value = f.color;
+            document.getElementById('tColorH').value = f.color;
+            document.getElementById('tPrefix').value = f.prefix;
+            document.getElementById('typoPan').style.opacity = '1';
+            document.getElementById('typoPan').style.pointerEvents = 'auto';
+            // show X/Y inputs
+            updateXY(f);
+        }
+
+        function updateXY(f) {
+            document.getElementById('xyPanel').style.display = '';
+            document.getElementById('posX').value = parseFloat(f.x).toFixed(1);
+            document.getElementById('posY').value = parseFloat(f.y).toFixed(1);
+        }
+
+        function moveFieldByInput(axis, val) {
+            if (selField === null) return;
+            const f = FIELDS[selField];
+            const el = document.getElementById('fel-' + f.key);
+            if (!el) return;
+            if (axis === 'x') {
+                f.x = Math.max(0, Math.min(89, val));
+                el.style.left = mm2px(f.x) + 'px';
+            } else {
+                f.y = Math.max(0, Math.min(49, val));
+                el.style.top = mm2px(f.y) + 'px';
+            }
+        }
+
+        function applyTypo() {
+            if (selField === null) return;
+            const f = FIELDS[selField];
+            f.font = document.getElementById('tFont').value;
+            f.size = parseFloat(document.getElementById('tSize').value) || 12;
+            f.bold = document.getElementById('tBold').checked;
+            f.prefix = document.getElementById('tPrefix').value;
+            updateFieldEl(selField);
+        }
+
+        function syncTColor(from, val) {
+            if (from === 'p') { document.getElementById('tColorH').value = val; }
+            else if (!/^#[0-9A-Fa-f]{6}$/.test(val)) return;
+            else document.getElementById('tColor').value = val;
+            if (selField === null) return;
+            FIELDS[selField].color = val;
+            updateFieldEl(selField);
+        }
+
+        // ════════════════════════════════════════
+        // BACKGROUND CANVAS RENDER
+        // ════════════════════════════════════════
+        function renderCard() {
+            const ctx = bgCanvas.getContext('2d');
+            ctx.clearRect(0, 0, EW, EH);
+            // Background image takes priority
+            const useBgImg = bgImgData && document.getElementById('useBgImg').checked;
+            if (useBgImg && bgImgEl) {
+                ctx.drawImage(bgImgEl, 0, 0, EW, EH);
+            } else {
+                const useGrad = document.getElementById('useGrad').checked;
+                if (useGrad) {
+                    const g = ctx.createLinearGradient(0, 0, EW, EH);
+                    g.addColorStop(0, getBgColor(1)); g.addColorStop(1, getBgColor(2));
+                    ctx.fillStyle = g;
+                } else ctx.fillStyle = getBgColor(1);
+                ctx.fillRect(0, 0, EW, EH);
+            }
+            // Update logo size
+            if (logoImg && logoEl) {
+                const lhPx = mm2px(parseFloat(document.getElementById('logoHmm').value) || 12);
+                const lrat = logoImg.naturalWidth / logoImg.naturalHeight;
+                const lwPx = lhPx * lrat;
+                logoEl.querySelector('img').style.width = lwPx + 'px';
+                logoEl.querySelector('img').style.height = lhPx + 'px';
+            }
+        }
+
+        function getBgColor(n) {
+            const h = document.getElementById('bgH' + n).value;
+            return /^#[0-9A-Fa-f]{6}$/.test(h) ? h : (n === 1 ? '#1a237e' : '#0d47a1');
+        }
+
+        // ════════════════════════════════════════
+        // BACKGROUND IMAGE / PDF UPLOAD
+        // ════════════════════════════════════════
+        document.getElementById('bgImgFile').addEventListener('change', e => handleBgFile(e.target.files[0]));
+
+        async function handleBgFile(file) {
+            if (!file) return;
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (ext === 'pdf') {
+                // Render first page with PDF.js
+                try {
+                    if (!window.pdfjsLib) { toast('PDF.js no cargado', 'err'); return }
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    const ab = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+                    const page = await pdf.getPage(1);
+                    const vp = page.getViewport({ scale: 2 });
+                    const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
+                    await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+                    bgImgData = c.toDataURL('image/jpeg', 0.95);
+                    finishBgImg();
+                } catch (e) { toast('Error al leer PDF: ' + e.message, 'err') }
+            } else {
+                const rd = new FileReader();
+                rd.onload = ev => { bgImgData = ev.target.result; finishBgImg() };
+                rd.readAsDataURL(file);
+            }
+        }
+
+        function finishBgImg() {
+            bgImgEl = new Image();
+            bgImgEl.onload = () => {
+                document.getElementById('bgImgThumb').innerHTML = `<img src="${bgImgData}" style="width:100%;height:100%;object-fit:contain">`;
+                document.getElementById('bgImgToggle').style.display = '';
+                document.getElementById('useBgImg').checked = true;
+                renderCard();
+            };
+            bgImgEl.src = bgImgData;
+            toast('🖼 Fondo cargado', 'ok');
+        }
+
+        function clearBgImg() {
+            bgImgData = null; bgImgEl = null;
+            document.getElementById('bgImgThumb').innerHTML = 'Sin img';
+            document.getElementById('bgImgFile').value = '';
+            document.getElementById('bgImgToggle').style.display = 'none';
+            renderCard();
+        }
+
+        // ════════════════════════════════════════
+        // LOGO
+        // ════════════════════════════════════════
+        document.getElementById('logoFile').addEventListener('change', e => {
+            const f = e.target.files[0]; if (!f) return;
+            const rd = new FileReader();
+            rd.onload = ev => {
+                logoImg = new Image();
+                logoImg.onload = () => {
+                    document.getElementById('logoThumb').innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:contain">`;
+                    document.getElementById('logoSizeRow').style.display = '';
+                    // Build logo drag element
+                    if (logoEl) logoEl.remove();
+                    logoEl = document.createElement('div'); logoEl.id = 'fel-logo';
+                    logoEl.style.left = mm2px(logoPos.x) + 'px'; logoEl.style.top = mm2px(logoPos.y) + 'px';
+                    logoEl.style.position = 'absolute';
+                    const lhPx = mm2px(parseFloat(document.getElementById('logoHmm').value) || 12);
+                    const lrat = logoImg.naturalWidth / logoImg.naturalHeight;
+                    const img2 = document.createElement('img');
+                    img2.src = ev.target.result; img2.style.width = (lhPx * lrat) + 'px'; img2.style.height = lhPx + 'px'; img2.style.display = 'block'; img2.draggable = false;
+                    logoEl.appendChild(img2);
+                    card.appendChild(logoEl);
+                    makeLogoDraggable();
+                    renderCard();
+                };
+                logoImg.src = ev.target.result;
+            };
+            rd.readAsDataURL(f);
+        });
+
+        function clearLogo() {
+            logoImg = null; if (logoEl) { logoEl.remove(); logoEl = null; }
+            document.getElementById('logoThumb').innerHTML = 'Sin logo';
+            document.getElementById('logoFile').value = '';
+            document.getElementById('logoSizeRow').style.display = 'none';
+            renderCard();
+        }
+
+        // ════════════════════════════════════════
+        // COLOR SYNC
+        // ════════════════════════════════════════
+        function wCP(cn, hn) {
+            document.getElementById(cn).addEventListener('input', e => { document.getElementById(hn).value = e.target.value; renderCard() });
+            document.getElementById(hn).addEventListener('input', e => { if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) { document.getElementById(cn).value = e.target.value; renderCard() } });
+        }
+        wCP('bgC1', 'bgH1'); wCP('bgC2', 'bgH2');
+        document.getElementById('useGrad').addEventListener('change', e => { document.getElementById('gradPanel').style.display = e.target.checked ? '' : 'none'; renderCard() });
+        document.getElementById('useBgImg').addEventListener('change', renderCard);
+
+        // ════════════════════════════════════════
+        // DATA FILE
+        // ════════════════════════════════════════
+        document.getElementById('dataFile').addEventListener('change', e => handleDataFile(e.target.files[0]));
+        const dz = document.getElementById('dz');
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('ov') });
+        dz.addEventListener('dragleave', () => dz.classList.remove('ov'));
+        dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('ov'); handleDataFile(e.dataTransfer.files[0]) });
+
+        const KEY_MAP = {
+            nombre: ['nombre', 'name', 'nombres', 'full name', 'fullname'],
+            cargo: ['cargo', 'position', 'puesto', 'title', 'título', 'titulo', 'rol', 'role'],
+            email: ['email', 'correo', 'mail', 'e-mail'],
+            telefono: ['telefono', 'teléfono', 'phone', 'tel', 'celular', 'movil', 'móvil', 'cell'],
+        };
+
+        function normKey(s) { return String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ') }
+
+        function mapRow(raw) {
+            const o = { nombre: '', cargo: '', email: '', telefono: '' };
+            const keys = Object.keys(raw);
+            for (const field in KEY_MAP) {
+                const found = keys.find(k => KEY_MAP[field].includes(normKey(k)));
+                if (found) o[field] = String(raw[found] || '').trim();
+            }
+            return o;
+        }
+
+        function handleDataFile(file) {
+            if (!file) { toast('No se seleccionó archivo', 'err'); return }
+            toast('⏳ Leyendo archivo…');
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            if (['xlsx', 'xls'].includes(ext)) {
+                if (!window.XLSX) { toast('Librería XLSX no disponible. Usa CSV.', 'err'); return }
+                const rd = new FileReader();
+                rd.onerror = () => toast('Error al leer el archivo', 'err');
+                rd.onload = e => {
+                    try {
+                        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                        const ws = wb.Sheets[wb.SheetNames[0]];
+                        const raw = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+                        loadRows(raw, file.name);
+                    } catch (err) { toast('Error XLSX: ' + err.message, 'err'); console.error(err) }
+                };
+                rd.readAsArrayBuffer(file);
+            } else {
+                // CSV / TXT — parse manually (no PapaParse dependency)
+                const rd = new FileReader();
+                rd.onerror = () => toast('Error al leer el archivo', 'err');
+                rd.onload = e => {
+                    try {
+                        const text = e.target.result;
+                        const data = parseCSV(text);
+                        loadRows(data, file.name);
+                    } catch (err) { toast('Error CSV: ' + err.message, 'err'); console.error(err) }
+                };
+                rd.readAsText(file, 'utf-8');
+            }
+        }
+
+        function parseCSV(text) {
+            const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim());
+            if (!lines.length) return [];
+            // Detect delimiter
+            const first = lines[0];
+            const delim = first.includes('\t') ? '\t' : first.includes(';') ? ';' : ',';
+            const headers = splitLine(first, delim);
+            return lines.slice(1).map(line => {
+                const vals = splitLine(line, delim);
+                const obj = {};
+                headers.forEach((h, i) => obj[h] = vals[i] || '');
+                return obj;
+            });
+        }
+
+        function splitLine(line, delim) {
+            const res = []; let cur = ''; let inQ = false;
+            for (let i = 0; i < line.length; i++) {
+                const c = line[i];
+                if (c === '"') { inQ = !inQ; }
+                else if (c === delim && !inQ) { res.push(cur.trim()); cur = ''; }
+                else cur += c;
+            }
+            res.push(cur.trim());
+            return res;
+        }
+
+        function loadRows(data, fname) {
+            if (!data || !data.length) { toast('Archivo vacío o sin datos', 'err'); return }
+            rows = data.map(mapRow).filter(r => r.nombre || r.email);
+            if (!rows.length) {
+                toast('⚠ No se encontraron columnas válidas (nombre/email)', 'err');
+                // Show raw columns to help user
+                const cols = Object.keys(data[0] || {}).join(', ');
+                console.warn('Columnas encontradas:', cols);
+                alert('No se encontraron columnas reconocibles.\n\nColumnas en tu archivo: ' + cols + '\n\nRenómbralas a: nombre, cargo, email, telefono');
+                return;
+            }
+            renderTable();
+            refreshFieldTexts();
+            document.getElementById('btnPdf').disabled = false;
+            document.getElementById('rowCnt').textContent = rows.length + ' reg.';
+            toast(`✅ ${fname} — ${rows.length} registros cargados`, 'ok');
+        }
+
+        function refreshFieldTexts() {
+            FIELDS.forEach((f, i) => {
+                const el = document.getElementById('fel-' + f.key);
+                if (el) el.textContent = (f.prefix) + (rows[0] ? rows[0][f.key] || f.label : f.label);
+            });
+        }
+
+        function renderTable() {
+            const w = document.getElementById('tw');
+            if (!rows.length) { w.innerHTML = '<div class="es"><div class="ei">📁</div><p>Sin datos</p></div>'; return }
+            w.innerHTML = `<table><thead><tr><th>#</th><th>Nombre</th><th>Cargo</th><th>Email</th><th>Tel</th></tr></thead><tbody>
+    ${rows.map((r, i) => `<tr><td style="color:var(--tx2)">${i + 1}</td><td>${r.nombre || '—'}</td><td>${r.cargo || '—'}</td><td>${r.email || '—'}</td><td>${r.telefono || '—'}</td></tr>`).join('')}
+  </tbody></table>`;
+        }
+
+        // ════════════════════════════════════════
+        // PDF GENERATION
+        // ════════════════════════════════════════
+        document.getElementById('btnPdf').addEventListener('click', genPDF);
+
+        async function genPDF() {
+            if (!rows.length) { toast('Carga un archivo de datos primero', 'err'); return }
+            document.getElementById('btnPdf').disabled = true;
+            toast('⏳ Generando PDF…');
+            await document.fonts.ready;
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const layout = document.getElementById('layout').value;
+                const CW = 90, CH = 50;
+                const DPI = 150;
+                const OW = Math.round(CW / 25.4 * DPI); // ~531px
+                const OH = Math.round(CH / 25.4 * DPI); // ~295px
+
+                const off = document.createElement('canvas'); off.width = OW; off.height = OH;
+                const octx = off.getContext('2d');
+
+                // Scale factor from editor to offscreen
+                const sc = OW / EW; // offscreen / editor
+
+                let doc, addFn;
+
+                if (layout === 'page') {
+                    doc = new jsPDF({ unit: 'mm', format: [CW, CH], orientation: 'landscape' });
+                    let first = true;
+                    addFn = async (rec) => {
+                        if (!first) doc.addPage([CW, CH], 'landscape');
+                        first = false;
+                        await drawCardToCtx(octx, OW, OH, sc, rec);
+                        doc.addImage(off.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, CW, CH, undefined, 'FAST');
+                    };
+                } else {
+                    doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+                    const A4W = 210, A4H = 297;
+                    const cols = 2;
+                    const cw = layout === '4up' ? Math.round(CW * .72) : CW;
+                    const ch = layout === '4up' ? Math.round(CH * .72) : CH;
+                    const gx = 6, gy = layout === '4up' ? 6 : 10;
+                    const sx = (A4W - cols * cw - (cols - 1) * gx) / 2, sy = layout === '4up' ? 8 : 10;
+                    const rpp = Math.floor((A4H - sy * 2 + gy) / (ch + gy));
+                    const perPage = cols * rpp;
+                    const oW2 = Math.round(cw / 25.4 * DPI), oH2 = Math.round(ch / 25.4 * DPI);
+                    const off2 = document.createElement('canvas'); off2.width = oW2; off2.height = oH2;
+                    const oc2 = off2.getContext('2d');
+                    const sc2 = oW2 / EW;
+                    let col = 0, row = 0, first = true;
+                    addFn = async (rec, idx) => {
+                        if (!first && idx % perPage === 0) { doc.addPage(); col = 0; row = 0; }
+                        if (col === cols) { col = 0; row++; }
+                        first = false;
+                        await drawCardToCtx(oc2, oW2, oH2, sc2, rec);
+                        doc.addImage(off2.toDataURL('image/jpeg', 0.95), 'JPEG', sx + col * (cw + gx), sy + row * (ch + gy), cw, ch, undefined, 'FAST');
+                        col++;
+                    };
+                }
+
+                for (let i = 0; i < rows.length; i++) {
+                    await addFn(rows[i], i);
+                    if (i % 5 === 4) await yld();
+                }
+
+                // DOWNLOAD — use data URI (safe on file:// in all browsers, avoids blob:null on Safari)
+                const dataUri = doc.output('datauristring');
+                const a = document.createElement('a');
+                a.href = dataUri;
+                a.download = 'tarjetas.pdf';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => document.body.removeChild(a), 500);
+                toast(`✅ PDF descargado — ${rows.length} tarjeta${rows.length !== 1 ? 's' : ''}`, 'ok');
+            } catch (err) {
+                console.error('PDF Error:', err);
+                toast('❌ Error PDF: ' + err.message, 'err');
+            }
+            document.getElementById('btnPdf').disabled = false;
+        }
+
+        function yld() { return new Promise(r => setTimeout(r, 0)) }
+
+        async function drawCardToCtx(ctx, W, H, sc, record) {
+            ctx.clearRect(0, 0, W, H);
+            // Background
+            const useBgImg = bgImgData && document.getElementById('useBgImg').checked;
+            if (useBgImg && bgImgEl) {
+                ctx.drawImage(bgImgEl, 0, 0, W, H);
+            } else {
+                const useGrad = document.getElementById('useGrad').checked;
+                if (useGrad) {
+                    const g = ctx.createLinearGradient(0, 0, W, H);
+                    g.addColorStop(0, getBgColor(1)); g.addColorStop(1, getBgColor(2));
+                    ctx.fillStyle = g;
+                } else ctx.fillStyle = getBgColor(1);
+                ctx.fillRect(0, 0, W, H);
+            }
+            // Logo
+            if (logoImg && logoEl) {
+                const imgEl = logoEl.querySelector('img');
+                const lw = parseFloat(imgEl.style.width) * sc;
+                const lh = parseFloat(imgEl.style.height) * sc;
+                const lx = parseFloat(logoEl.style.left) * sc;
+                const ly = parseFloat(logoEl.style.top) * sc;
+                ctx.drawImage(logoImg, lx, ly, lw, lh);
+            }
+            // Text fields
+            ctx.textBaseline = 'top';
+            // 1pt = 25.4/72 mm; at W px = CW_MM mm: px/mm = W/90
+            // So 1pt = 25.4/72 * (W/90) px
+            const ptPx = 25.4 / 72 * (W / 90);
+            FIELDS.forEach(f => {
+                const el = document.getElementById('fel-' + f.key);
+                if (!el) return;
+                const px = f.size * ptPx;
+                ctx.font = `${f.bold ? 'bold' : 'normal'} ${px}px "${f.font}",Inter,sans-serif`;
+                ctx.fillStyle = /^#[0-9A-Fa-f]{6}$/.test(f.color) ? f.color : '#fff';
+                const val = record[f.key] || '';
+                if (val) ctx.fillText(f.prefix + val, parseFloat(el.style.left) * sc, parseFloat(el.style.top) * sc);
+            });
+        }
+
+        // ════════════════════════════════════════
+        // TOAST
+        // ════════════════════════════════════════
+        let toastT;
+        function toast(msg, type = '') {
+            const t = document.getElementById('toast'); t.textContent = msg;
+            t.className = 'sh' + (type === 'ok' ? ' toast-ok' : type === 'err' ? ' toast-er' : '');
+            clearTimeout(toastT); toastT = setTimeout(() => t.className = '', 5000);
+        }
+
+        // ════════════════════════════════════════
+        // INIT
+        // ════════════════════════════════════════
+        buildFieldEls();
+        renderCard();
+    </script>
+</body>
+
+</html>
